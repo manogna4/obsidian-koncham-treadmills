@@ -1,0 +1,10 @@
+{
+    "id": "koncham-treadmills",
+    "name": "koncham treadmills",
+    "version": "0.0.1",
+    "minAppVersion": "0.12.1",
+    "description": "treadmills in obsidian",
+    "author": "mano",
+    "authorUrl": "https://manogna4.github.io",
+    "isDesktopOnly": false
+}
