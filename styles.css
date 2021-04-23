@@ -1,19 +1,14 @@
-/* .zz-placeholder {
-    color: red;
-} */
+.koncham-treadmills>.nav-file>.nav-file-title {
+    padding-left: 2px;
+    padding-right: 2px;
+}
 
+.koncham-nav-note-flash {
+    color: black;
+    background-color: grey !important;
+}
 
-/* replaces font everywhere in obsidian */
-
-
-/* body {
-    font-family: monospace;
-    font: 'Consolas', 'M+ 1m', 'iA Writer Mono S', 'M+ 1m', monospace, 'Source Code Pro';
-    font-family: 'iA Writer Mono S';
-} */
-
-
-/* to get only note content to have a certain font */
-
-
-/* .view-content {font-family: 'M+ 1m';} */
+.koncham-nav-note-error {
+    color: black;
+    background-color: red !important;
+}
