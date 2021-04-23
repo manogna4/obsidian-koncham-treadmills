@@ -1,12 +1,22 @@
-import { MarkdownView, Plugin, ItemView, WorkspaceLeaf, Menu, EditorPosition, FuzzySuggestModal} from 'obsidian';
-import {App, Modal} from 'obsidian'
+import { MarkdownView, Plugin, ItemView, WorkspaceLeaf, Menu, FuzzySuggestModal} from 'obsidian';
+import {App} from 'obsidian'
 const plugin_name = 'koncham-treadmills'
 const view_type = 'treadmills'
 const view_name = 'treadmills'
 
+interface treadmillItem {
+	rung: string;
+	title: string;
+	line: number;
+	start: number;
+}
+
+let max_char = 120
+let tags_treadmill = ['#curr', '#todo', '#idea', '#mull', '#ripe', '#cook', '#done']
+
+
 export default class konchamTreadmills extends Plugin {
 	public view: TreadmillsView
-	EditorPosition: EditorPosition
 
 	onunload() {
 		this.app.workspace.detachLeavesOfType(view_type);
@@ -31,14 +41,6 @@ export default class konchamTreadmills extends Plugin {
 		} else {
 			this.registerEvent(this.app.workspace.on('layout-ready', this.initView));
 		}
-
-		// mch_todo remove before release
-		this.addCommand({ 
-			id: 'placeholder1',
-			name: 'placeholder1',
-			hotkeys: [{ "modifiers": [], "key": "F22" }],
-			callback: () => this.placeholder1(),
-		});
 
 		this.addCommand({
 			id: 'log-treadmills-note',
@@ -81,19 +83,6 @@ export default class konchamTreadmills extends Plugin {
 		});
 	};
 
-	// flashes the current line to highlight
-	flashLine() {
-		const view = this.app.workspace.activeLeaf.view;
-		if (view instanceof MarkdownView) {
-			const cm = view.sourceMode.cmEditor;
-			let cursorLine = cm.getCursor().line;
-			cm.addLineClass(cursorLine, "wrap", plugin_name + "-flash")
-			setTimeout(() => {
-				cm.removeLineClass(cursorLine, "wrap", plugin_name + "-flash")
-			}, 100);
-		}
-	}
-
 	showTreadmillsView() {
 		this.app.workspace.iterateAllLeaves((leaf: any) => {
 			if (leaf.getViewState()['type'] == view_type) {
@@ -106,103 +95,26 @@ export default class konchamTreadmills extends Plugin {
 		this.view.initialize();
 	}
 
-	// mch_todo remove before release
-	placeholder1() {
-		console.log(plugin_name + ': placeholder1');
-		let view = this.app.workspace.activeLeaf.view
-		if (view instanceof MarkdownView){
-			console.log(view.editor.getCursor())
-			
-		}
-	}
-
-	
-	getTreadmillsNote() {
-		// mch_todo take these from settings
-		let max_char = 120
-		let tags_treadmill = ['#curr', '#todo', '#idea', '#done']
-		// final section
-		let view = this.app.workspace.activeLeaf.view;
-		let file = this.app.workspace.getActiveFile();
-		let file_cache = this.app.metadataCache.getFileCache(file);
-		let tags_data
-		if ('tags' in file_cache) {
-			tags_data = Object.values(file_cache.tags)
-			tags_data = tags_data.filter(item => (tags_treadmill.includes(item.tag)))
-			tags_data = tags_data.filter(item => (item.position.start.col == 0))
-			tags_data = tags_data.filter(isSectionHead)
-		}
-		let tag_data = []
-		let tmill_data = []
-		if (tags_data) {
-			for (const [key, value] of Object.entries(tags_data)) {
-				if (view instanceof MarkdownView && tags_treadmill.includes(value.tag)) {
-					let line_num = value.position.start.line
-					let line = view.editor.getLine(line_num)
-					let start_position = line.search(" ");
-					let task_name = line.substring(start_position, start_position + max_char);
-					tag_data.push([value.tag, task_name, line_num, start_position])
-					tmill_data.push({
-						rung: value.tag,
-						title: task_name,
-						line: line_num,
-						start: start_position
-					})
-				}
-			}
-		}
-
-		tag_data.sort(sortDefault)
-		return (tag_data);
-
-		function isSectionHead(item: any){
-			let line_num = item.position.start.line
-			if (view instanceof MarkdownView) {
-				if (line_num == 0) {
-					return true
-				} else if (view.editor.getLine(line_num - 1) === ''){
-					return true
-				} else {
-					return false
-				}
-			}
-		}
-
-		function sortDefault(item1: any, item2: any){
-			let treadmill_order = tags_treadmill.indexOf(item1[0]) - tags_treadmill.indexOf(item2[0])
-			if(treadmill_order == 0){
-				item1[1].localeCompare(item2[1])
-			} else {
-				return treadmill_order
-			}
-		}
-	
-	}
-
 	getTreadmillsNoteData() {
-		// mch_todo take these from settings
-		let max_char = 120
-		let tags_treadmill = ['#curr', '#todo', '#idea', '#done']
-		// final section
 		let view = this.app.workspace.activeLeaf.view;
 		let file = this.app.workspace.getActiveFile();
 		let file_cache = this.app.metadataCache.getFileCache(file);
-		let tags_data
+		let tmill_data_raw
 		if ('tags' in file_cache) {
-			tags_data = Object.values(file_cache.tags)
-			tags_data = tags_data.filter(item => (tags_treadmill.includes(item.tag)))
-			tags_data = tags_data.filter(item => (item.position.start.col == 0))
-			tags_data = tags_data.filter(isSectionHead)
+			tmill_data_raw = Object.values(file_cache.tags)
+			tmill_data_raw = tmill_data_raw.filter(item => (item.position.start.col == 0))
+			tmill_data_raw = tmill_data_raw.filter(item => (tags_treadmill.includes(item.tag)))
+			tmill_data_raw = tmill_data_raw.filter(isSectionHead)
 		}
-		let tmill_data = []
-		if (tags_data) {
-			for (const [key, value] of Object.entries(tags_data)) {
+		let tmill_data_interface = []
+		if (tmill_data_raw) {
+			for (const [key, value] of Object.entries(tmill_data_raw)) {
 				if (view instanceof MarkdownView && tags_treadmill.includes(value.tag)) {
 					let line_num = value.position.start.line
 					let line = view.editor.getLine(line_num)
 					let start_position = line.search(" ");
 					let task_name = line.substring(start_position, start_position + max_char);
-					tmill_data.push({
+					tmill_data_interface.push({
 						rung: value.tag,
 						title: task_name,
 						line: line_num,
@@ -212,8 +124,8 @@ export default class konchamTreadmills extends Plugin {
 			}
 		}
 
-		tmill_data.sort(sortDefault)
-		return (tmill_data);
+		tmill_data_interface.sort(sortDefault)
+		return (tmill_data_interface);
 
 		function isSectionHead(item: any) {
 			let line_num = item.position.start.line
@@ -240,7 +152,6 @@ export default class konchamTreadmills extends Plugin {
 	}
 
 	logTreadmillsNote(){
-		console.log(this.getTreadmillsNote())
 		console.log(this.getTreadmillsNoteData())
 	}
 
@@ -252,7 +163,6 @@ export default class konchamTreadmills extends Plugin {
 // (recent-files plugin)[https://github.com/tgrosinger/recent-files-obsidian]
 class TreadmillsView extends ItemView {
 	private readonly plugin: konchamTreadmills
-	EditorPosition: EditorPosition
 
 	constructor(
 		leaf: WorkspaceLeaf,
@@ -265,14 +175,12 @@ class TreadmillsView extends ItemView {
 	}
 
 	public readonly initialize = (): void => {
-		// let leaf_active = this.app.workspace.activeLeaf;
 		const file = this.app.workspace.getActiveFile();
 		if (file == null){
 			this.createContentEmpty('not applicable')
 		} else {
 			const view = this.app.workspace.activeLeaf.view;
-			let treadmills_data = this.plugin.getTreadmillsNote();
-			// console.log(plugin_name + ': treadmills_data', treadmills_data)
+			let treadmills_data = this.plugin.getTreadmillsNoteData();
 			if (view instanceof MarkdownView && treadmills_data.length) {
 				this.createContentData(treadmills_data)
 			} else if (view instanceof MarkdownView) {
@@ -286,18 +194,18 @@ class TreadmillsView extends ItemView {
 
 	createContentData(treadmills_data: any){
 		const rootEl = createDiv({ cls: 'nav-folder mod-root koncham-treadmills' });
-		treadmills_data.forEach((item: any) => {
+		treadmills_data.forEach((item: treadmillItem) => {
 			const navFile = rootEl.createDiv({ cls: 'nav-file' });
 			const navFileTitle = navFile.createDiv({ cls: 'nav-file-title' });
 
-			let displaytext = item[0] + " -- " + item[1]
+			let displaytext = item.rung + " -- " + item.title
 
 			navFileTitle.createDiv({
 				cls: 'nav-file-title-content',
 				text: displaytext,
 			});
-			navFileTitle.setAttr("data-line", item[2])
-			navFileTitle.setAttr("data-char", item[3])
+			navFileTitle.setAttr("data-line", item.line)
+			navFileTitle.setAttr("data-char", item.start)
 			const contentEl = this.containerEl.children[1];
 			contentEl.empty();
 			contentEl.appendChild(rootEl);
@@ -308,8 +216,9 @@ class TreadmillsView extends ItemView {
 				let view = this.app.workspace.activeLeaf.view
 				if (view instanceof MarkdownView){
 					let editor = view.editor
-					// mch_todo expose the `120` to settings
-					editor.setSelection({ line: line_num, ch: 0 }, { line: line_num, ch: char_num + 120 })
+					editor.focus()
+					editor.setSelection({ line: line_num, ch: 0 }, { line: line_num, ch: char_num + max_char })
+					editor.focus()
 				}
 
 			});
@@ -348,16 +257,9 @@ class TreadmillsView extends ItemView {
 						this.app.workspace.detachLeavesOfType(view_type);
 					});
 			})
+		menu.setNoIcon()
 			
 	}
-}
-
-
-interface treadmillItem {
-	rung: string;
-	title: string;
-	line: number;
-	start: number;
 }
 
 class itemSwitchModal extends FuzzySuggestModal<treadmillItem> {
@@ -379,7 +281,6 @@ class itemSwitchModal extends FuzzySuggestModal<treadmillItem> {
 	}
 
 	onChooseItem(item: treadmillItem, evt: MouseEvent | KeyboardEvent): void {
-		console.log(item.title)
 		let view = this.app.workspace.activeLeaf.view
 		if (view instanceof MarkdownView) {
 			let editor = view.editor
