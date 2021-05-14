@@ -159,8 +159,6 @@ export default class konchamTreadmills extends Plugin {
 	
 }
 
-// I've used large parts of the code from
-// (recent-files plugin)[https://github.com/tgrosinger/recent-files-obsidian]
 class TreadmillsView extends ItemView {
 	private readonly plugin: konchamTreadmills
 
@@ -198,7 +196,7 @@ class TreadmillsView extends ItemView {
 			const navFile = rootEl.createDiv({ cls: 'nav-file' });
 			const navFileTitle = navFile.createDiv({ cls: 'nav-file-title' });
 
-			let displaytext = item.rung + " -- " + item.title
+			let displaytext = item.rung + " : " + item.title
 
 			navFileTitle.createDiv({
 				cls: 'nav-file-title-content',
