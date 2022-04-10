@@ -12,7 +12,7 @@ interface treadmillItem {
 }
 
 let max_char = 120
-let tags_treadmill = ['#a-curr', '#a-todo', '#i-idea', '#i-mull', '#a-wait', '#i-ripe', '#i-cook', '#a-done', '#g-wip', '#g-set', '#g-met', '#g-dud']
+let tags_treadmill = ['#unit', '#a-curr', '#a-todo', '#i-idea', '#i-mull', '#a-wait', '#i-ripe', '#i-cook', '#a-done', '#g-wip', '#g-set', '#g-met', '#g-dud']
 
 
 export default class konchamTreadmills extends Plugin {
